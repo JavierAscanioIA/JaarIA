@@ -78,7 +78,7 @@
         };
     }
 
-    // Botón con inicio forzado directo (salta cualquier bloqueo de Chrome)
+    // Botón con inicio forzado directo
     btnActivar.addEventListener('click', () => {
         try {
             statusText.innerText = "Iniciando voz...";
@@ -106,27 +106,44 @@
     });
 
     function procesarComando(comando) {
+        // 1. Comando específico: YouTube
         if (comando.includes('youtube') || comando.includes('abre youtube')) {
             statusText.innerText = "Abriendo YouTube...";
             window.speechSynthesis.speak(new SpeechSynthesisUtterance("Abriendo YouTube"));
-            setTimeout(() => {
-                window.open('https://www.youtube.com', '_blank');
-            }, 1000);
+            window.open('https://youtube.com', '_blank');
             return;
         }
 
-        if (comando.includes('busca') || comando.includes('mercado libre')) {
-            let articulo = comando.replace('busca', '').replace('en mercado libre', '').trim();
+        // 2. Comando específico: Banco de Venezuela
+        if (comando.includes('banco venezuela') || comando.includes('banco de venezuela') || comando.includes('abre el banco')) {
+            statusText.innerText = "Abriendo Banco de Venezuela...";
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance("Abriendo la página del Banco de Venezuela"));
+            window.open('https://bancodevenezuela.com', '_blank');
+            return;
+        }
+
+        // 3. Comando específico: Mercado Libre VZLA (Solo si especificas Mercado Libre)
+        if (comando.includes('mercado libre') || comando.includes('mercadolibre')) {
+            let articulo = comando.replace('busca en mercado libre', '').replace('buscar en mercado libre', '').replace('mercado libre', '').replace('busca', '').trim();
+            statusText.innerText = "Buscando en Mercado Libre...";
             window.speechSynthesis.speak(new SpeechSynthesisUtterance("Buscando en Mercado Libre"));
-            setTimeout(() => {
-                window.open("https://listado.mercadolibre.com.ve/" + encodeURIComponent(articulo), '_blank');
-            }, 1000);
+            window.open("https://mercadolibre.com.ve" + encodeURIComponent(articulo), '_blank');
             return;
         }
 
-        window.speechSynthesis.speak(new SpeechSynthesisUtterance("No entendí la orden"));
+        // 4. BUSCADOR UNIVERSAL (Para cualquier otra cosa que le hables)
+        // Limpiamos palabras de activación comunes para refinar la búsqueda
+        let busquedaLimpia = comando.replace(/^busca\s+|^buscar\s+|^abre\s+|^encuentra\s+|^qué\s+es\s+/g, '').trim();
+        
+        // Si el usuario solo dijo palabras sueltas de activación, usamos todo el comando completo
+        if (busquedaLimpia === "") { busquedaLimpia = comando; }
+
+        statusText.innerText = "Buscando en Google: " + busquedaLimpia;
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance("Buscando " + busquedaLimpia));
+        window.open("https://google.com" + encodeURIComponent(busquedaLimpia), '_blank');
     }
 </script>
 
 </body>
 </html>
+
