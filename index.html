@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jaar IA - Asistente Personal</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+        }
+        .avatar {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(45deg, #007bff, #00ff88);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 24px;
+        }
+        .btn-escuchar {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+        }
+        .btn-escuchar:hover {
+            background-color: #0056b3;
+        }
+        #status {
+            margin-top: 20px;
+            font-style: italic;
+            color: #b3b3b3;
+        }
+        #output {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #00ff88;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="avatar">Jaar IA</div>
+    <button class="btn-escuchar" id="btnActivar">Activar Jaar IA</button>
+    <p id="status">Presiona el botón para hablar...</p>
+    <p id="output"></p>
+</div>
+
+<script>
+    const btnActivar = document.getElementById('btnActivar');
+    const statusText = document.getElementById('status');
+    const outputText = document.getElementById('output');
+
+    // Función para que el asistente hable
+    function hablar(texto) {
+        const utterance = new SpeechSynthesisUtterance(texto);
+        utterance.lang = 'es-ES';
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // Configuración del reconocimiento de voz nativo de Chrome
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+        alert("Tu navegador no soporta reconocimiento de voz. Por favor usa Google Chrome.");
+    } else {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'es-ES'; // Cambiado a es-ES para mayor compatibilidad de activación en Chrome móvil
+        recognition.interimResults = false;
+
+        // Acción al presionar el botón principal
+        btnActivar.addEventListener('click', () => {
+            hablar("¿En qué puedo ayudarte?");
+            
+            // Espera que termine la locución antes de abrir el micrófono
+            setTimeout(() => {
+                recognition.start();
+                statusText.innerText = "Escuchando...";
+            }, 1800);
+        });
+
+        // Captura de voz exitosa
+        recognition.onresult = (event) => {
+            const comando = event.results[0][0].transcript.toLowerCase();
+            statusText.innerText = "Procesando...";
+            outputText.innerText = `Dijiste: "${comando}"`;
+
+            procesarComando(comando);
+        };
+
+        // Cierre automático del micrófono al terminar de hablar
+        recognition.onspeechend = () => {
+            recognition.stop();
+            statusText.innerText = "Presiona el botón para hablar...";
+        };
+    }
+
+    // Cerebro de comandos de Jaar IA
+    function procesarComando(comando) {
+        // Comando 1: Abrir YouTube
+        if (comando.includes('youtube') || comando.includes('abre youtube')) {
+            hablar("Entendido, abriendo YouTube");
+            setTimeout(() => {
+                window.open('https://www.youtube.com', '_blank');
+            }, 1000);
+            return;
+        }
+
+        // Comando 2: Buscar en Mercado Libre
+        if (comando.includes('busca') || comando.includes('mercado libre')) {
+            let articulo = comando.replace('busca', '').replace('en mercado libre', '').trim();
+            hablar(`Buscando ${articulo} en Mercado Libre`);
+            setTimeout(() => {
+                window.open(`https://listado.mercadolibre.com.ve/${encodeURIComponent(articulo)}`, '_blank');
+            }, 1500);
+            return;
+        }
+
+        // Comando 3: Saludo básico
+        if (comando.includes('cómo estás') || comando.includes('como estas')) {
+            hablar("Excelente, listo para ayudarte en tus proyectos.");
+            return;
+        }
+
+        // Respuesta por defecto
+        hablar("Disculpa, todavía estoy aprendiendo a hacer esa tarea.");
+    }
+</script>
+
+</body>
+</html>
