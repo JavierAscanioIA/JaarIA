@@ -73,81 +73,48 @@
     const statusText = document.getElementById('status');
     const outputText = document.getElementById('output');
 
-    // Función para que el asistente hable
-    function hablar(texto) {
-        const utterance = new SpeechSynthesisUtterance(texto);
-        utterance.lang = 'es-ES';
-        window.speechSynthesis.speak(utterance);
-    }
-
-    // Configuración del reconocimiento de voz nativo de Chrome
+    // Configuración del reconocimiento de voz nativo
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
-    if (!SpeechRecognition) {
-        alert("Tu navegador no soporta reconocimiento de voz. Por favor usa Google Chrome.");
-    } else {
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'es-ES'; // Cambiado a es-ES para mayor compatibilidad de activación en Chrome móvil
-        recognition.interimResults = false;
+    let recognition;
 
-        // Acción al presionar el botón principal
-        btnActivar.addEventListener('click', () => {
-            hablar("¿En qué puedo ayudarte?");
-            
-            // Espera que termine la locución antes de abrir el micrófono
-            setTimeout(() => {
-                recognition.start();
-                statusText.innerText = "Escuchando...";
-            }, 1800);
-        });
+    if (!SpeechRecognition) {
+        alert("Tu navegador no soporta reconocimiento de voz. Usa Google Chrome.");
+    } else {
+        recognition = new SpeechRecognition();
+        recognition.lang = 'es-ES';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        // Al iniciar la escucha real
+        recognition.onstart = () => {
+            statusText.innerText = "Escuchando... ¡Habla ahora!";
+        };
 
         // Captura de voz exitosa
         recognition.onresult = (event) => {
             const comando = event.results[0][0].transcript.toLowerCase();
             statusText.innerText = "Procesando...";
             outputText.innerText = `Dijiste: "${comando}"`;
-
             procesarComando(comando);
         };
 
-        // Cierre automático del micrófono al terminar de hablar
+        // Si ocurre un error
+        recognition.onerror = (event) => {
+            console.log("Error de reconocimiento:", event.error);
+            if (event.error === 'no-speech') {
+                statusText.innerText = "No se detectó voz. Intenta de nuevo.";
+            } else {
+                statusText.innerText = "Error: " + event.error;
+            }
+        };
+
+        // Cierre del micrófono
         recognition.onspeechend = () => {
             recognition.stop();
-            statusText.innerText = "Presiona el botón para hablar...";
         };
     }
 
-    // Cerebro de comandos de Jaar IA
-    function procesarComando(comando) {
-        // Comando 1: Abrir YouTube
-        if (comando.includes('youtube') || comando.includes('abre youtube')) {
-            hablar("Entendido, abriendo YouTube");
-            setTimeout(() => {
-                window.open('https://www.youtube.com', '_blank');
-            }, 1000);
-            return;
-        }
-
-        // Comando 2: Buscar en Mercado Libre
-        if (comando.includes('busca') || comando.includes('mercado libre')) {
-            let articulo = comando.replace('busca', '').replace('en mercado libre', '').trim();
-            hablar(`Buscando ${articulo} en Mercado Libre`);
-            setTimeout(() => {
-                window.open(`https://listado.mercadolibre.com.ve/${encodeURIComponent(articulo)}`, '_blank');
-            }, 1500);
-            return;
-        }
-
-        // Comando 3: Saludo básico
-        if (comando.includes('cómo estás') || comando.includes('como estas')) {
-            hablar("Excelente, listo para ayudarte en tus proyectos.");
-            return;
-        }
-
-        // Respuesta por defecto
-        hablar("Disculpa, todavía estoy aprendiendo a hacer esa tarea.");
-    }
-</script>
-
-</body>
-</html>
+    // Función optimizada para evitar solapamientos con el micrófono
+    function hablarYEscuchar(texto) {
+        try
