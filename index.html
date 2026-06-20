@@ -8,7 +8,7 @@
         body {
             background-color: #121212;
             color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -16,47 +16,22 @@
             height: 100vh;
             margin: 0;
         }
-        .container {
-            text-align: center;
-            padding: 20px;
-        }
+        .container { text-align: center; padding: 20px; }
         .avatar {
-            width: 120px;
-            height: 120px;
+            width: 120px; height: 120px;
             background: linear-gradient(45deg, #007bff, #00ff88);
-            border-radius: 50%;
-            margin: 0 auto 20px;
+            border-radius: 50%; margin: 0 auto 20px;
             box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 24px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 24px;
         }
         .btn-escuchar {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+            background-color: #007bff; color: white; border: none;
+            padding: 15px 30px; font-size: 18px; border-radius: 50px;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
         }
-        .btn-escuchar:hover {
-            background-color: #0056b3;
-        }
-        #status {
-            margin-top: 20px;
-            font-style: italic;
-            color: #b3b3b3;
-        }
-        #output {
-            margin-top: 15px;
-            font-weight: bold;
-            color: #00ff88;
-        }
+        #status { margin-top: 20px; color: #b3b3b3; font-style: italic; }
+        #output { margin-top: 15px; font-weight: bold; color: #00ff88; }
     </style>
 </head>
 <body>
@@ -64,7 +39,7 @@
 <div class="container">
     <div class="avatar">Jaar IA</div>
     <button class="btn-escuchar" id="btnActivar">Activar Jaar IA</button>
-    <p id="status">Presiona el botón para hablar...</p>
+    <p id="status">Presiona el botón para comenzar...</p>
     <p id="output"></p>
 </div>
 
@@ -73,48 +48,85 @@
     const statusText = document.getElementById('status');
     const outputText = document.getElementById('output');
 
-    // Configuración del reconocimiento de voz nativo
+    // Configuración segura del Reconocimiento de Voz
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let recognition;
+    let recognition = null;
 
-    if (!SpeechRecognition) {
-        alert("Tu navegador no soporta reconocimiento de voz. Usa Google Chrome.");
-    } else {
+    if (SpeechRecognition) {
         recognition = new SpeechRecognition();
         recognition.lang = 'es-ES';
         recognition.continuous = false;
         recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
 
-        // Al iniciar la escucha real
         recognition.onstart = () => {
             statusText.innerText = "Escuchando... ¡Habla ahora!";
         };
 
-        // Captura de voz exitosa
         recognition.onresult = (event) => {
             const comando = event.results[0][0].transcript.toLowerCase();
-            statusText.innerText = "Procesando...";
-            outputText.innerText = `Dijiste: "${comando}"`;
+            outputText.innerText = "Dijiste: " + comando;
             procesarComando(comando);
         };
 
-        // Si ocurre un error
         recognition.onerror = (event) => {
-            console.log("Error de reconocimiento:", event.error);
-            if (event.error === 'no-speech') {
-                statusText.innerText = "No se detectó voz. Intenta de nuevo.";
-            } else {
-                statusText.innerText = "Error: " + event.error;
-            }
+            statusText.innerText = "Error de micrófono: " + event.error;
         };
 
-        // Cierre del micrófono
         recognition.onspeechend = () => {
             recognition.stop();
+            statusText.innerText = "Presiona el botón para hablar...";
         };
     }
 
-    // Función optimizada para evitar solapamientos con el micrófono
-    function hablarYEscuchar(texto) {
-        try
+    // Botón con inicio forzado directo (salta cualquier bloqueo de Chrome)
+    btnActivar.addEventListener('click', () => {
+        try {
+            statusText.innerText = "Iniciando voz...";
+            outputText.innerText = "";
+
+            const utterance = new SpeechSynthesisUtterance("¿En qué puedo ayudarte?");
+            utterance.lang = 'es-ES';
+
+            utterance.onend = () => {
+                if (recognition) {
+                    try {
+                        recognition.start();
+                    } catch(err) {
+                        statusText.innerText = "El micrófono ya estaba activo.";
+                    }
+                } else {
+                    alert("Tu navegador no es compatible con reconocimiento de voz.");
+                }
+            };
+
+            window.speechSynthesis.speak(utterance);
+        } catch (error) {
+            alert("Error crítico al presionar el botón: " + error.message);
+        }
+    });
+
+    function procesarComando(comando) {
+        if (comando.includes('youtube') || comando.includes('abre youtube')) {
+            statusText.innerText = "Abriendo YouTube...";
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance("Abriendo YouTube"));
+            setTimeout(() => {
+                window.open('https://www.youtube.com', '_blank');
+            }, 1000);
+            return;
+        }
+
+        if (comando.includes('busca') || comando.includes('mercado libre')) {
+            let articulo = comando.replace('busca', '').replace('en mercado libre', '').trim();
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance("Buscando en Mercado Libre"));
+            setTimeout(() => {
+                window.open("https://listado.mercadolibre.com.ve/" + encodeURIComponent(articulo), '_blank');
+            }, 1000);
+            return;
+        }
+
+        window.speechSynthesis.speak(new SpeechSynthesisUtterance("No entendí la orden"));
+    }
+</script>
+
+</body>
+</html>
